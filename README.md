@@ -31,11 +31,19 @@
 ## 安装
 
 ```bash
-# 方式一：加入 PATH（推荐）
-cd ~/rail-cli
-export PATH="$PWD:$PATH"
+# 一键安装（推荐）：复制到 ~/.local 并建立 rail 命令软链
+./install.sh
 
-# 方式二：editable 安装
+# 自定义前缀 / 安装到 ~/bin / 卸载
+./install.sh --prefix ~/tools
+./install.sh --user
+./install.sh --uninstall
+```
+
+脚本自动检测 Python 3.10+（支持 `PYTHON` 环境变量指定解释器），并把入口脚本的 shebang 固定为检测到的 Python 绝对路径——即使 shell 的 PATH 里只有系统自带 Python 3.9 也能正常运行。
+
+```bash
+# 备选：editable 安装（需要 pip）
 pip install -e .
 ```
 
@@ -47,8 +55,8 @@ pip install -e .
 # 车次查询
 rail train query G1 --pretty
 
-# 站到站查询（北京 → 北京南，使用电报码）
-rail train sts BJP VNP --pretty
+# 站到站查询（深圳 → 广州东，使用电报码；可加 --date）
+rail train sts SZQ GGQ --pretty
 
 # 车站模糊搜索
 rail station preselect 新余

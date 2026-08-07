@@ -13,6 +13,8 @@ RailGo 数据服务（https://api.railgo.dev）CLI 工作目录。
 
 - API 无 key、无显式限速；禁止商业用途、禁止公开中转；引用数据需标注来源
 - V1/V2 调用方式和格式差异较大；V2 响应较慢（约 1s），需合理设置 timeout
+- `train sts`（站到站查询）**必须带 `date` 参数**（格式 YYYYMMDD，缺省会返回空数组），CLI 已默认填今天
+- 常用电报码：深圳 SZQ、深圳北 IOQ、广州东 GGQ、广州 GZQ、广州南 IZQ、北京 BJP、北京南 VNP
 - 反馈 QQ 群 652032716；E-mail: tkp30@tkp30.top（开发者）
 
 ## 约定
