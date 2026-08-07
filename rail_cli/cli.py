@@ -6,6 +6,7 @@ import sys
 
 from rail_cli import __version__
 from rail_cli.client import RailGoClient
+from rail_cli.station import resolve
 from rail_cli.update import maybe_auto_update, reserve_today, run_update
 
 
@@ -47,8 +48,8 @@ def setup_parser() -> argparse.ArgumentParser:
     train_q.add_argument("train", help="train number, e.g. G1")
 
     train_s = train_sub.add_parser("sts", help="station-to-station train query", parents=[common])
-    train_s.add_argument("from_", metavar="FROM", help="departure station telecode, e.g. SZQ")
-    train_s.add_argument("to", metavar="TO", help="arrival station telecode, e.g. GGQ")
+    train_s.add_argument("from_", metavar="FROM", help="departure station name or telecode, e.g. 深圳 or SZQ")
+    train_s.add_argument("to", metavar="TO", help="arrival station name or telecode, e.g. 广州东 or GGQ")
     train_s.add_argument("--date", default=None,
                          help="date YYYYMMDD or YYYY-MM-DD (default: today)")
 
@@ -59,8 +60,8 @@ def setup_parser() -> argparse.ArgumentParser:
     sta_p = sub.add_parser("station", help="station-related queries (V1)", parents=[common])
     sta_sub = sta_p.add_subparsers(dest="station_cmd")
 
-    sta_q = sta_sub.add_parser("query", help="query station by telecode", parents=[common])
-    sta_q.add_argument("telecode", help="station telecode, e.g. XBG")
+    sta_q = sta_sub.add_parser("query", help="query station by name or telecode", parents=[common])
+    sta_q.add_argument("station", help="station name or telecode, e.g. 深圳北 or IOQ")
 
     sta_pres = sta_sub.add_parser("preselect", help="station name autocomplete", parents=[common])
     sta_pres.add_argument("keyword", help="search keyword, e.g. 新余")
@@ -71,7 +72,7 @@ def setup_parser() -> argparse.ArgumentParser:
     # --- exit (V2) ---
     ex_p = sub.add_parser("exit", help="gate/platform/exit info (V2)", parents=[common])
     ex_p.add_argument("train", help="train number, e.g. G1")
-    ex_p.add_argument("station", help="station telecode, e.g. VNP")
+    ex_p.add_argument("station", help="station name or telecode, e.g. 北京南 or VNP")
     ex_p.add_argument("--date", default=None, help="date (default: today)")
     ex_p.add_argument("--kind", default=None, choices=["arrival", "departure"],
                       help="arrival or departure (default: departure)")
@@ -82,7 +83,7 @@ def setup_parser() -> argparse.ArgumentParser:
 
     # --- screen (V2) ---
     sc_p = sub.add_parser("screen", help="station big screen (V2)", parents=[common])
-    sc_p.add_argument("station", help="station telecode, e.g. BJP")
+    sc_p.add_argument("station", help="station name or telecode, e.g. 北京 or BJP")
     sc_p.add_argument("--kind", default=None, choices=["departure", "arrival"],
                       help="departure or arrival (default: departure)")
 
@@ -151,7 +152,9 @@ def main() -> None:
             elif sub == "sts":
                 date = args.date or datetime.date.today().strftime("%Y%m%d")
                 data = client.get_v1("/api/train/sts_query",
-                                     {"from": args.from_, "to": args.to, "date": date})
+                                     {"from": resolve(client, args.from_),
+                                      "to": resolve(client, args.to),
+                                      "date": date})
             elif sub == "preselect":
                 data = client.get_v1("/api/train/preselect", {"keyword": args.keyword})
             else:
@@ -160,7 +163,8 @@ def main() -> None:
         elif args.command == "station":
             sub = getattr(args, "station_cmd", None)
             if sub == "query":
-                data = client.get_v1("/api/station/query", {"telecode": args.telecode})
+                data = client.get_v1("/api/station/query",
+                                     {"telecode": resolve(client, args.station)})
             elif sub == "preselect":
                 data = client.get_v1("/api/station/preselect", {"keyword": args.keyword})
             else:
@@ -171,7 +175,8 @@ def main() -> None:
 
         elif args.command == "exit":
             data = client.get_v2("/api/v2/getExit", {
-                "trainNum": args.train, "stationTelecode": args.station,
+                "trainNum": args.train,
+                "stationTelecode": resolve(client, args.station),
                 "date": args.date, "kind": args.kind,
             }, raw=args.raw)
 
@@ -181,7 +186,8 @@ def main() -> None:
 
         elif args.command == "screen":
             data = client.get_v2("/api/v2/getStationBigScreen",
-                                 {"stationTelecode": args.station, "kind": args.kind},
+                                 {"stationTelecode": resolve(client, args.station),
+                                  "kind": args.kind},
                                  raw=args.raw)
 
         elif args.command == "main":
