@@ -6,6 +6,7 @@ import sys
 
 from rail_cli import __version__
 from rail_cli.client import RailGoClient
+from rail_cli.update import maybe_auto_update, reserve_today, run_update
 
 
 def setup_parser() -> argparse.ArgumentParser:
@@ -16,6 +17,8 @@ def setup_parser() -> argparse.ArgumentParser:
     parser.add_argument("-v", "--verbose", action="store_true", help="print request URL + status")
     parser.add_argument("--pretty", action="store_true", help="human-readable JSON output")
     parser.add_argument("--raw", action="store_true", help="print raw API response (unwrap nothing)")
+    parser.add_argument("--no-update", action="store_true",
+                        help="skip the daily auto-update for this invocation")
     sub = parser.add_subparsers(dest="command", required=False)
 
     # Global flags also accepted after the subcommand (argparse parent parser trick).
@@ -28,9 +31,13 @@ def setup_parser() -> argparse.ArgumentParser:
                         help="human-readable JSON output")
     common.add_argument("--raw", action="store_true", default=argparse.SUPPRESS,
                         help="print raw API response (unwrap nothing)")
+    common.add_argument("--no-update", action="store_true", default=argparse.SUPPRESS,
+                        help="skip the daily auto-update for this invocation")
 
     # --- misc ---
     sub.add_parser("version", help="show version")
+    sub.add_parser("update", help="update rail-cli from git (pull + reinstall)",
+                   parents=[common])
 
     # --- train (V1) ---
     train_p = sub.add_parser("train", help="train-related queries (V1)", parents=[common])
@@ -118,6 +125,21 @@ def main() -> None:
     if args.command == "version":
         print(f"rail {__version__}")
         return
+
+    if args.command == "update":
+        code, msg = run_update()
+        if code == 0:
+            print(msg)
+            reserve_today()  # 手动更新成功 → 当天不再自动更新
+        else:
+            print(f"rail: {msg}", file=sys.stderr)
+        sys.exit(code)
+
+    # 当天首次运行自动更新（AUTO_UPDATE 默认开；--no-update 单次跳过）。
+    # version/update 不触发：version 会被 install.sh 的验证流程调用，
+    # 若触发会一边安装一边更新造成递归。
+    if not args.no_update:
+        maybe_auto_update()
 
     client = RailGoClient(verbose=args.verbose)
 

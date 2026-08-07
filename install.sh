@@ -8,6 +8,7 @@
 #   ./install.sh --prefix ~/x  # 自定义前缀
 #   ./install.sh --user        # 安装到 ~/bin（旧式 macOS/Linux 用户 bin）
 #   ./install.sh --update      # git pull 拉取更新并重装到原位置
+#   rail update                # CLI 内更新（等价 --update；AUTO_UPDATE 默认开，每天首次运行自动更新）
 #   ./install.sh --uninstall   # 卸载
 set -euo pipefail
 
@@ -85,19 +86,20 @@ install_files() {
     rm -f "$BIN_DIR/rail"
     ln -s "$RAIL_DEST/rail" "$BIN_DIR/rail"
 
-    # 记录安装位置，供 --update 使用
-    printf 'PREFIX=%s\n' "$PREFIX" > "$RAIL_DEST/.install-meta"
+    # 记录安装位置 + 仓库路径，供 --update 与 `rail update` 使用
+    printf 'PREFIX=%s\nREPO=%s\n' "$PREFIX" "$SCRIPT_DIR" > "$RAIL_DEST/.install-meta"
 
     info "已安装到 $RAIL_DEST"
     info "命令软链: $BIN_DIR/rail -> $RAIL_DEST/rail"
 }
 
 # 验证安装（version + 在线查询）
+# AUTO_UPDATE=0：验证流程不触发每日自动更新（否则安装/更新过程中会递归）
 verify_install() {
     info "验证安装..."
-    "$BIN_DIR/rail" version
+    AUTO_UPDATE=0 "$BIN_DIR/rail" version
     if command -v curl >/dev/null 2>&1; then
-        "$BIN_DIR/rail" train sts SZQ GGQ 2>/dev/null | python3 -c '
+        AUTO_UPDATE=0 "$BIN_DIR/rail" train sts SZQ GGQ 2>/dev/null | python3 -c '
 import json, sys
 try:
     d = json.load(sys.stdin)
@@ -113,6 +115,11 @@ except Exception:
 # 找已安装位置（读 .install-meta）。找不到返回非零。
 find_installed_prefix() {
     local cand pfx=""
+    # 显式 --prefix 优先：`rail update` 传入当前安装的 prefix，
+    # 避免多安装并存时（如 ~/.local 之外还有自定义前缀）更新错位置
+    if [ -n "${PREFIX_EXPLICIT:-}" ] && [ -f "$PREFIX/lib/rail-cli/.install-meta" ]; then
+        echo "$PREFIX"; return 0
+    fi
     for cand in "$HOME/.local" "$HOME" "${PREFIX:-}"; do
         [ -n "$cand" ] || continue
         if [ -f "$cand/lib/rail-cli/.install-meta" ]; then
@@ -125,15 +132,16 @@ find_installed_prefix() {
 
 # ---------- 参数解析 ----------
 MODE=install   # install | update | uninstall
+PREFIX_EXPLICIT=0
 while [ $# -gt 0 ]; do
     case "$1" in
-        --prefix)  PREFIX="${2:?--prefix 需要一个路径}"; shift 2 ;;
-        --prefix=*) PREFIX="${1#*=}"; shift ;;
+        --prefix)  PREFIX="${2:?--prefix 需要一个路径}"; PREFIX_EXPLICIT=1; shift 2 ;;
+        --prefix=*) PREFIX="${1#*=}"; PREFIX_EXPLICIT=1; shift ;;
         --user)    PREFIX="$HOME"; shift ;;
         --update)  MODE=update; shift ;;
         --uninstall) MODE=uninstall; shift ;;
         -h|--help)
-            sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'
+            sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
             exit 0 ;;
         *) die "未知参数: $1（--help 查看用法）" ;;
     esac
@@ -228,4 +236,4 @@ esac
 
 verify_install
 info "安装完成！运行 \`rail --help\` 查看全部命令。"
-info "以后更新：cd $(pwd) && ./install.sh --update"
+info "以后更新：rail update（或 cd $(pwd) && ./install.sh --update）"
