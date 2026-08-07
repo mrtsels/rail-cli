@@ -23,6 +23,7 @@ RailGo 数据服务（https://api.railgo.dev）CLI 工作目录。
 
 - 本目录为 rail-cli 项目根；文件操作默认相对此目录
 - 新增抓取/脚本放在本目录内，避免散落 home
+- **技能同步**：Hermes 技能库 `~/.hermes/skills/coding/rail-cli` 是本仓库的 git 克隆（remote 指向 GitHub）。仓库侧改完 commit+push 后，技能侧 `cd ~/.hermes/skills/coding/rail-cli && git pull` 同步；技能侧直接改 SKILL.md 则 commit+push 后仓库侧 `git pull`。两处是同一仓库的独立 clone，改动必须通过 push/pull 流转，不要只改文件
 
 ## Git 规则
 
