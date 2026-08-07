@@ -1,5 +1,6 @@
 """CLI entry point — argparse subcommands for all RailGo APIs."""
 import argparse
+import datetime
 import json
 import sys
 
@@ -39,8 +40,10 @@ def setup_parser() -> argparse.ArgumentParser:
     train_q.add_argument("train", help="train number, e.g. G1")
 
     train_s = train_sub.add_parser("sts", help="station-to-station train query", parents=[common])
-    train_s.add_argument("from_", metavar="FROM", help="departure station telecode, e.g. BJP")
-    train_s.add_argument("to", help="arrival station telecode, e.g. VNP")
+    train_s.add_argument("from_", metavar="FROM", help="departure station telecode, e.g. SZQ")
+    train_s.add_argument("to", metavar="TO", help="arrival station telecode, e.g. GGQ")
+    train_s.add_argument("--date", default=None,
+                         help="date YYYYMMDD or YYYY-MM-DD (default: today)")
 
     train_pres = train_sub.add_parser("preselect", help="train number autocomplete", parents=[common])
     train_pres.add_argument("keyword", help="search keyword, e.g. G1")
@@ -124,7 +127,9 @@ def main() -> None:
             if sub == "query":
                 data = client.get_v1("/api/train/query", {"train": args.train})
             elif sub == "sts":
-                data = client.get_v1("/api/train/sts_query", {"from": args.from_, "to": args.to})
+                date = args.date or datetime.date.today().strftime("%Y%m%d")
+                data = client.get_v1("/api/train/sts_query",
+                                     {"from": args.from_, "to": args.to, "date": date})
             elif sub == "preselect":
                 data = client.get_v1("/api/train/preselect", {"keyword": args.keyword})
             else:
