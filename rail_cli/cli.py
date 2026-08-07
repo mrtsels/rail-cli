@@ -146,24 +146,27 @@ def main() -> None:
             data = client.get_v2("/api/v2/getExit", {
                 "trainNum": args.train, "stationTelecode": args.station,
                 "date": args.date, "kind": args.kind,
-            })
+            }, raw=args.raw)
 
         elif args.command == "delay":
-            data = client.get_v2("/api/v2/getTrainDelayAll", {"trainNum": args.train})
+            data = client.get_v2("/api/v2/getTrainDelayAll", {"trainNum": args.train},
+                                 raw=args.raw)
 
         elif args.command == "screen":
             data = client.get_v2("/api/v2/getStationBigScreen",
-                                 {"stationTelecode": args.station, "kind": args.kind})
+                                 {"stationTelecode": args.station, "kind": args.kind},
+                                 raw=args.raw)
 
         elif args.command == "main":
             data = client.get_v2("/api/v2/getTrainMain",
-                                 {"trainNum": args.train, "date": args.date})
+                                 {"trainNum": args.train, "date": args.date},
+                                 raw=args.raw)
 
         elif args.command == "coach":
-            data = client.get_v2("/api/v2/getCoachPic", {"train": args.train})
+            data = client.get_v2("/api/v2/getCoachPic", {"train": args.train}, raw=args.raw)
 
         elif args.command == "map":
-            data = client.get_v2("/api/v2/mapLine", {"train": args.train})
+            data = client.get_v2("/api/v2/mapLine", {"train": args.train}, raw=args.raw)
 
         else:
             parser.print_help()

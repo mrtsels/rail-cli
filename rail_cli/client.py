@@ -55,9 +55,15 @@ class RailGoClient:
         """GET a V1 endpoint (raw JSON, no wrapper)."""
         return self._request(V1_BASE_URL, path, params)
 
-    def get_v2(self, path: str, params: dict | None = None) -> dict:
-        """GET a V2 endpoint and check the {success, msg, data} wrapper."""
+    def get_v2(self, path: str, params: dict | None = None, raw: bool = False) -> dict:
+        """GET a V2 endpoint.
+
+        By default checks the {success, msg, data} wrapper and returns `data`.
+        With raw=True, returns the full response untouched (no wrapper check).
+        """
         data = self._request(V2_BASE_URL, path, params)
+        if raw:
+            return data
         if not data.get("success", False):
             msg = data.get("msg") or "unknown error"
             raise RuntimeError(f"API error: {msg}")
