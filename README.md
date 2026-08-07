@@ -44,14 +44,28 @@
 
 ### 更新（git 跟踪）
 
-仓库通过 git 跟踪 [mrtsels/rail-cli](https://github.com/mrtsels/rail-cli)，随时拉取作者更新并自动重装到原位置：
+仓库通过 git 跟踪 [mrtsels/rail-cli](https://github.com/mrtsels/rail-cli)，随时拉取作者更新。两种方式：
 
 ```bash
+# 方式一：CLI 内更新（任何目录均可；已安装的版本会自动重装到原位置）
+rail update
+
+# 方式二：仓库内脚本更新
 cd rail-cli   # 你 clone 的仓库目录
 ./install.sh --update
 ```
 
 脚本会确认当前目录是 rail-cli 仓库（origin 校验）、`git pull` 拉取最新代码、读取安装元数据（`.install-meta`）找到之前装的位置并重装。未安装过时运行 `--update` 会给出指引而非静默安装。
+
+### 每日自动更新（AUTO_UPDATE）
+
+**默认开启**：当天首次运行 `rail` 时自动更新（git pull，已安装则重装到原位置），之后当天不再检查。
+
+- **开关**：环境变量 `AUTO_UPDATE=0`（或 `false` / `off` / `no` / `n` / `disabled`）关闭；不设置或任意其他值 = 开启
+- **单次跳过**：`rail --no-update <命令>` 或 `rail <命令> --no-update`（适合脚本/离线场景）
+- **检查标记**：`~/.cache/rail-cli/last-auto-update`（内容为上次检查日期，每天只检查一次；可用 `XDG_CACHE_HOME` 重定向）
+- **失败不阻塞**：自动更新失败（如离线）只打印警告到 stderr，命令照常执行；可稍后 `rail update` 手动重试
+- **不触发场景**：`rail version` / `rail update` 不触发自动更新；自动更新消息只写 stderr，不污染 stdout 的 JSON 输出
 
 ```bash
 # 备选：editable 安装（需要 pip）
@@ -100,13 +114,16 @@ rail train --help
 | `-v, --verbose` | 显示请求 URL 和 HTTP 状态（stderr） |
 | `--pretty` | 人类可读的 JSON 输出（2 空格缩进） |
 | `--raw` | 原样输出 API 响应 |
+| `--no-update` | 本次调用跳过每日自动更新 |
 
 ## 环境变量
 
 | 变量 | 默认值 | 说明 |
 |---|---|---|
+| `AUTO_UPDATE` | `1`（开） | 当天首次运行 `rail` 时自动更新；`0`/`false`/`off`/`no` 关闭 |
 | `RAILGO_BASE_URL` | `https://data.railgo.zenglingkun.cn` | 覆盖 V1 接口 base URL |
 | `RAILGO_V2_BASE_URL` | `https://rg-api.zenglingkun.cn` | 覆盖 V2 接口 base URL |
+| `XDG_CACHE_HOME` | `~/.cache` | 自动更新检查标记的存放位置（`<XDG_CACHE_HOME>/rail-cli/last-auto-update`） |
 
 ## 数据说明
 

@@ -653,5 +653,63 @@ Expected: All 12 print OK. (V2 failures on non-running trains are acceptable.)
 | `rail_cli/__main__.py` | 5 |
 | `rail_cli/client.py` | 45 |
 | `rail_cli/cli.py` | 180 |
+| `rail_cli/update.py` | ~230 |
 | `README.md` | 60 |
 | **Total** | ~300 |
+
+---
+
+## Phase 5: 更新机制（`rail update` + AUTO_UPDATE 自动更新，2026-08-07）
+
+**版本**：0.1.0 → 0.2.0。**提交粒度**：Task 5.1 + 5.2 同一次代码提交（自动更新复用 `rail update` 的更新管线，拆分会产生人为接缝），Task 5.3 文档单独提交。
+
+### Task 5.1: `rail update` 命令 + 安装元数据扩展
+
+**Objective:** 新增 `rail update` 子命令（任何目录可运行），并让安装元数据记录仓库路径。
+
+**Files:**
+- Create: `rail_cli/update.py`
+- Modify: `rail_cli/cli.py`, `install.sh`, `rail_cli/__init__.py`, `pyproject.toml`
+
+**设计决策:**
+
+1. **布局检测**（`detect_install`）：以 `rail_cli/__file__` 定位——
+   - 父目录有 `.install-meta` → **installed 模式**（读 `PREFIX`/`REPO`）
+   - 父目录有 `.git` → **repo 模式**（从 clone / pip editable 运行）
+   - 都没有 → pip 复制安装，无法自更新（报错 + 指引）
+2. **installed 模式**：委托 `bash install.sh --prefix <PREFIX> --update`（git pull + 重装到原位置，单一事实来源，不重复实现）
+3. **repo 模式**：`git pull --ff-only origin main`，对比 pull 前后 HEAD 判断"已是最新版本" vs "已更新到 <sha>"
+4. **`.install-meta` 增加 `REPO=<仓库路径>`**（install_files 写入）；旧安装无 REPO 字段时，`rail update` 若在仓库目录内运行则自愈回写（`resolve_repo` 的 cwd 兜底）
+5. **`find_installed_prefix` 显式 `--prefix` 优先**：多安装并存（如 `~/.local` + 自定义前缀）时，`rail update` 更新当前安装而非默认位置
+6. **origin 校验**：更新前确认 origin 含 `rail-cli`，防止对无关仓库 pull
+
+### Task 5.2: 每日自动更新（AUTO_UPDATE，默认开）
+
+**Objective:** 当天首次运行 CLI 时自动更新，默认开启，可关闭/单次跳过。
+
+**设计决策:**
+
+1. **`AUTO_UPDATE` 环境变量**：默认开（未设置/空/任意值 = 开）；`0`/`false`/`no`/`off`/`n`/`disabled` = 关
+2. **当天首次运行标记**：`$XDG_CACHE_HOME/rail-cli/last-auto-update`（默认 `~/.cache/rail-cli/`），内容 = YYYYMMDD，flock 串行化
+3. **先写标记再更新**：`check_and_reserve_today()` 返回 True 前已写入今天 → 并发进程/重入调用都看到"今天已检查"，不会重复 pull（git index.lock 双保险）
+4. **失败不阻塞**：更新失败只警告到 stderr，命令照常执行；标记照写（每天只尝试一次，避免离线时每条命令都卡网络）；提示 `rail update` 手动重试
+5. **stdout 纯净**：所有自动更新输出（含 install.sh/git pull 的 stdout）转发到 stderr——否则会污染紧随其后的 API JSON 输出（实测抓到的 bug：`Already up to date.` 混入 stdout）
+6. **防递归**：`rail version` / `rail update` 不触发自动更新；install.sh 的 `verify_install` 用 `AUTO_UPDATE=0` 运行（version 会被验证流程调用，否则安装/更新中会递归）
+7. **`--no-update` 全局旗标**：单次跳过（根 + 子命令双位置，SUPPRESS 模式与 -v/--pretty/--raw 一致）
+8. **`rail update` 成功后 `reserve_today()`**：手动更新当天不再自动更新
+
+**验证（全部实测通过）：**
+- 仓库模式：fresh marker → 首跑触发 pull + "已是最新版本"(stderr) + stdout 纯 JSON；同日再跑静默
+- `AUTO_UPDATE=0` / `--no-update` → 不写 marker
+- `rail version` → 不写 marker
+- 已安装模式（`--prefix /tmp/rail-test`）：`rail update` 原位重装；自动更新同样 stdout 纯 JSON
+- 旧 meta（无 REPO）+ 仓库 cwd → 自愈回写 REPO 并更新；非仓库 cwd → 清晰报错 exit 1
+- install.sh `--update` 在 `--prefix` 显式时优先用该前缀（多安装场景）
+
+### Task 5.3: 文档更新
+
+**Objective:** README / AGENTS.md / PLAN.md 同步更新机制说明。
+
+- `README.md`：更新章节两种方式（`rail update` / `./install.sh --update`）；新增"每日自动更新（AUTO_UPDATE）"章节；全局参数表加 `--no-update`；环境变量表加 `AUTO_UPDATE` / `XDG_CACHE_HOME`
+- `AGENTS.md`：关键事实增加更新机制一行
+- 本文件（PLAN.md）：追加 Phase 5
