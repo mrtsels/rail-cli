@@ -40,7 +40,18 @@
 ./install.sh --uninstall
 ```
 
-脚本自动检测 Python 3.10+（支持 `PYTHON` 环境变量指定解释器），并把入口脚本的 shebang 固定为检测到的 Python 绝对路径——即使 shell 的 PATH 里只有系统自带 Python 3.9 也能正常运行。
+脚本自动检测 Python 3.10+（支持 `PYTHON` 环境变量指定解释器，PATH 被精简时也会扫描 Homebrew/miniconda 常见位置），并把入口脚本的 shebang 固定为检测到的 Python 绝对路径——即使 shell 的 PATH 里只有系统自带 Python 3.9 也能正常运行。
+
+### 更新（git 跟踪）
+
+仓库通过 git 跟踪 [mrtsels/rail-cli](https://github.com/mrtsels/rail-cli)，随时拉取作者更新并自动重装到原位置：
+
+```bash
+cd rail-cli   # 你 clone 的仓库目录
+./install.sh --update
+```
+
+脚本会确认当前目录是 rail-cli 仓库（origin 校验）、`git pull` 拉取最新代码、读取安装元数据（`.install-meta`）找到之前装的位置并重装。未安装过时运行 `--update` 会给出指引而非静默安装。
 
 ```bash
 # 备选：editable 安装（需要 pip）
