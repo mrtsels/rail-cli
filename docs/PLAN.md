@@ -39,11 +39,14 @@
 
 ### 环境验证
 
-- **Python 3.13.12**（`/usr/local/bin/python3`）✅ 满足 `dict | None` 等 3.10+ 语法
+- **Python 3.13.12**（`python3` 默认命中 miniconda，`/opt/homebrew/Caskroom/miniconda/base/bin/python3`）✅ 满足 `dict | None` 等 3.10+ 语法
+- ⚠️ **坑**：`/usr/bin/python3` 是系统自带 **3.9.6**（不支持 `dict | None`）；`python3.10` 不存在（有 3.11/3.12/3.13/3.14）。**入口脚本必须用 `#!/usr/bin/env python3`**，不要硬编码 `python3.10` 或 `/usr/bin/python3`
 - **urllib 实测可直连**（无需代理配置）：`urllib.request.urlopen('https://data.railgo.zenglingkun.cn/api/lucky')` 正常返回 JSON
+- **gzip**：服务器仅在客户端发送 `Accept-Encoding: gzip` 时才压缩（响应头 `vary: Accept-Encoding`）；urllib 默认不发送该头 → 收到的都是未压缩响应，**零额外处理安全**
 - V1 延迟 ~0.2-0.35s；V2 延迟 ~0.2-0.35s（比文档声称的 1s 快，但保持 30s timeout 余量）
-- DNS 解析为 198.18.0.x（Clash TUN fake-ip 段，系统代理 127.0.0.1:1082），curl/urllib 均正常，无需特殊处理
-- 中文参数（新余）URL 编码正常；响应 UTF-8 正常
+- DNS 解析为 198.18.0.x（Clash TUN fake-ip 段，系统代理 127.0.0.1:1082），curl/urllib 均正常，无需特殊处理；代理环境变量为空
+- 中文参数（新余）URL 编码正常（`--data-urlencode` / urllib 自动编码）；响应 JSON 为 `\uXXXX` 转义，`json.loads` 后还原正确中文
+- 无显式限速头（`ratelimit`/`x-ratelimit-*` 均未出现）
 
 ### 对 PLAN 的决策影响
 
