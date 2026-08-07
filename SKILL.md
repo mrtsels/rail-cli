@@ -1,7 +1,7 @@
 ---
 name: rail-cli
 description: "Use when you need Chinese railway data (trains, stations)."
-version: 1.0.0
+version: 1.1.0
 author: Hermes Agent
 license: MIT
 platforms: [macos, linux]
@@ -30,7 +30,7 @@ cd rail-cli
 ./install.sh
 ```
 
-- 默认装到 `~/.local`（程序在 `~/.local/lib/rail-cli/`，命令软链 `~/.local/bin/rail`）；装完验证 `rail version` → `rail 0.1.0`
+- 默认装到 `~/.local`（程序在 `~/.local/lib/rail-cli/`，命令软链 `~/.local/bin/rail`）；装完验证 `rail version` → `rail 0.2.0`
 - 脚本自动探测 Python 3.10+（PATH → `python3.14`..`python3.10` → Homebrew/miniconda 常见绝对路径；也可 `PYTHON=/path/to/python ./install.sh` 指定）
 - **自动重写 shebang**：安装后的 `rail` 用探测到的 Python 绝对路径运行，之后无论 shell PATH 如何都能跑
 - 变体：`./install.sh --prefix ~/tools`（自定义前缀）、`./install.sh --user`（装到 `~/bin`）、`pip install -e .`（需 pip）
@@ -46,12 +46,21 @@ export PATH="$HOME/.local/bin:$PATH"
 ### 更新 / 卸载
 
 ```bash
-cd rail-cli                      # --update 必须在 clone 的仓库目录内
-./install.sh --update            # git pull --ff-only origin main + 重装到原位置
-./install.sh --uninstall
+rail update                      # CLI 内更新，任何目录可运行：git pull + 重装到原位置
+./install.sh --update            # 等价脚本方式（需在 clone 的仓库目录内）
+./install.sh --uninstall         # 卸载
 ```
 
-未安装过就 `--update` 会报错指引（不会静默装到默认位置造成重复安装）。
+`rail update` 自动定位仓库与安装位置（安装元数据 `.install-meta` 记录 `PREFIX`+`REPO`）；旧安装缺 REPO 元数据时，在仓库目录内运行会自愈回写。未安装过就 `--update` 会报错指引（不会静默装到默认位置造成重复安装）。
+
+### 自动更新（AUTO_UPDATE，默认开）
+
+**当天首次运行 `rail` 时自动更新**（git pull，已安装则重装到原位置），之后当天不再检查：
+
+- **关闭**：`AUTO_UPDATE=0`（或 `false`/`off`/`no`/`n`/`disabled`）；**单次跳过**：`rail --no-update <命令>`
+- 检查标记 `~/.cache/rail-cli/last-auto-update`（内容=当天日期，可用 `XDG_CACHE_HOME` 重定向），每天只检查一次
+- 失败（如离线）只警告到 stderr，命令照常执行；可稍后 `rail update` 手动重试
+- `rail version` / `rail update` 不触发自动更新；自动更新输出全走 stderr，不污染 stdout 的 JSON
 
 ### 不想安装？直接从仓库跑
 
@@ -100,7 +109,7 @@ PATH="/opt/homebrew/Caskroom/miniconda/base/bin:$PATH" ./rail train query G1
 
 ### 全局参数与环境变量
 
-- `--pretty`：缩进 JSON（人类可读）；`-v/--verbose`：打印请求 URL + HTTP 状态（stderr）；`--raw`：V2 不解包原样输出
+- `--pretty`：缩进 JSON（人类可读）；`-v/--verbose`：打印请求 URL + HTTP 状态（stderr）；`--raw`：V2 不解包原样输出；`--no-update`：本次跳过每日自动更新
 - 全局 flag 子命令前后皆可：`rail -v lucky` ≡ `rail lucky -v`
 - `RAILGO_BASE_URL`（V1，默认 `https://data.railgo.zenglingkun.cn`）、`RAILGO_V2_BASE_URL`（V2，默认 `https://rg-api.zenglingkun.cn`）——正常不用动
 - 出错时打印 `rail: error: <msg>` 到 stderr 并 **exit 1**
@@ -145,11 +154,12 @@ rail lucky --pretty
 8. **无 key、无显式限速**；V2 约 0.2-0.4s，CLI timeout 30s
 9. **合规**：禁止商业用途、禁止公开接口中转；引用数据需标注来源
 10. 输出为 UTF-8 中文 JSON（`ensure_ascii=False`），直接可读
+11. **自动更新默认开**：当天首次运行会先 git pull（约 1s，已安装则重装）；脚本/批量场景用 `rail --no-update` 或 `AUTO_UPDATE=0` 跳过
 
 ## 验证清单（装完跑一遍确认可用）
 
 ```bash
-rail version                      # rail 0.1.0
+rail version                      # rail 0.2.0
 rail train query G1 --pretty      # 有 timetable 数组
 rail delay G1 --pretty            # 各站 delayStatus
 ```
