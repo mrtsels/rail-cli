@@ -1,0 +1,5 @@
+#!/usr/bin/env python3
+"""RailGo CLI entry point."""
+from rail_cli.cli import main
+
+main()
