@@ -153,8 +153,9 @@ rail lucky --pretty
 7. **别直接请求 api.railgo.dev**：那是 Apifox 文档站，WAF 把 `/api/*` 302 到帮助页；CLI 内部已走真实 API
 8. **无 key、无显式限速**；V2 约 0.2-0.4s，CLI timeout 30s
 9. **合规**：禁止商业用途、禁止公开接口中转；引用数据需标注来源
-10. 输出为 UTF-8 中文 JSON（`ensure_ascii=False`），直接可读
-11. **自动更新默认开**：当天首次运行会先 git pull（约 1s，已安装则重装）；脚本/批量场景用 `rail --no-update` 或 `AUTO_UPDATE=0` 跳过
+10. **暂不支持票价查询**：全部 13 个接口（含 sts/main）返回字段均无价格/票价数据；用户问价格时如实说明 API 无此功能，引导去 12306/铁路12306 App 查
+11. 输出为 UTF-8 中文 JSON（`ensure_ascii=False`），直接可读
+12. **自动更新默认开**：当天首次运行会先 git pull（约 1s，已安装则重装）；脚本/批量场景用 `rail --no-update` 或 `AUTO_UPDATE=0` 跳过
 
 ## 验证清单（装完跑一遍确认可用）
 
