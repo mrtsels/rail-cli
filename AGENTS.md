@@ -14,8 +14,9 @@ RailGo 数据服务（https://api.railgo.dev）CLI 工作目录。
 - API 无 key、无显式限速；禁止商业用途、禁止公开中转；引用数据需标注来源
 - V1/V2 调用方式和格式差异较大；V2 响应较慢（约 1s），需合理设置 timeout
 - `train sts`（站到站查询）**必须带 `date` 参数**（格式 YYYYMMDD，缺省会返回空数组），CLI 已默认填今天
+- **车站参数直接输中文站名即可**（如 `rail screen 深圳北`、`rail train sts 深圳 广州东`）：内置 3382 站映射（`rail_cli/stations.json`，来源 12306）+ preselect 实时兜底；三字电报码（如 IOQ）同样兼容；模糊查找仍用 `station preselect`
 - 更新机制：`rail update` 手动更新；`AUTO_UPDATE` 默认开，当天首次运行自动更新（标记 `~/.cache/rail-cli/last-auto-update`，每天一次）；`--no-update` 单次跳过；`version`/`update` 不触发自动更新；安装元数据 `.install-meta` 含 `PREFIX`+`REPO`
-- 常用电报码：深圳 SZQ、深圳北 IOQ、广州东 GGQ、广州 GZQ、广州南 IZQ、北京 BJP、北京南 VNP
+- 常用电报码：深圳 SZQ、深圳北 IOQ、广州东 GGQ、广州 GZQ、广州南 IZQ、北京 BJP、北京南 VNP（车站参数已支持站名直输，一般无需记码）
 - 反馈 QQ 群 652032716；E-mail: tkp30@tkp30.top（开发者）
 
 ## 约定

@@ -1,7 +1,7 @@
 ---
 name: rail-cli
 description: "Use when you need Chinese railway data (trains, stations)."
-version: 1.1.0
+version: 1.2.0
 author: Hermes Agent
 license: MIT
 platforms: [macos, linux]
@@ -30,7 +30,7 @@ cd rail-cli
 ./install.sh
 ```
 
-- 默认装到 `~/.local`（程序在 `~/.local/lib/rail-cli/`，命令软链 `~/.local/bin/rail`）；装完验证 `rail version` → `rail 0.2.0`
+- 默认装到 `~/.local`（程序在 `~/.local/lib/rail-cli/`，命令软链 `~/.local/bin/rail`）；装完验证 `rail version` → `rail 0.3.0`
 - 脚本自动探测 Python 3.10+（PATH → `python3.14`..`python3.10` → Homebrew/miniconda 常见绝对路径；也可 `PYTHON=/path/to/python ./install.sh` 指定）
 - **自动重写 shebang**：安装后的 `rail` 用探测到的 Python 绝对路径运行，之后无论 shell PATH 如何都能跑
 - 变体：`./install.sh --prefix ~/tools`（自定义前缀）、`./install.sh --user`（装到 `~/bin`）、`pip install -e .`（需 pip）
@@ -90,9 +90,9 @@ PATH="/opt/homebrew/Caskroom/miniconda/base/bin:$PATH" ./rail train query G1
 | 子命令 | 说明 |
 |---|---|
 | `rail train query <车次>` | 车次信息：车型、交路(diagram)、开行日(rundays)、时刻表(timetable) |
-| `rail train sts <出发> <到达>` | 站到站车次（电报码；默认今天，可 `--date`） |
+| `rail train sts <出发> <到达>` | 站到站车次（站名或电报码；默认今天，可 `--date`） |
 | `rail train preselect <关键词>` | 车次号模糊搜索 |
-| `rail station query <电报码>` | 车站信息 |
+| `rail station query <站名或电报码>` | 车站信息 |
 | `rail station preselect <关键词>` | 车站名模糊搜索（中文 OK） |
 | `rail lucky` | 随机车次 |
 
@@ -118,21 +118,21 @@ PATH="/opt/homebrew/Caskroom/miniconda/base/bin:$PATH" ./rail train query G1
 
 ```bash
 rail train query G1 --pretty           # G1：CR400BF-S、上局、7 站时刻表
-rail train sts SZQ GGQ --pretty        # 深圳→广州东今天全部车次
+rail train sts 深圳 广州东 --pretty        # 站名或电报码均可
 rail train sts IOQ IZQ --date 20260807 # 指定日期（YYYYMMDD 或 YYYY-MM-DD）
 rail station preselect 新余             # 中文关键词直接传
-rail station query SZQ
+rail station query 深圳北               # 站名或电报码均可
 rail main G1 --pretty                  # V2 主数据（含 rundays 开行日）
 rail delay G1 --pretty                 # 各站正晚点+晚点分钟(delayTime)
-rail screen SZQ --kind departure
-rail exit G1 VNP --pretty              # 检票口/站台/出站口
+rail screen 深圳北 --kind departure
+rail exit G1 北京南 --pretty           # 检票口/站台/出站口
 rail lucky --pretty
 ```
 
 ### 常用电报码
 
 深圳 `SZQ`、深圳北 `IOQ`、广州东 `GGQ`、广州 `GZQ`、广州南 `IZQ`、北京 `BJP`、北京南 `VNP`、上海虹桥 `AOH`、南京南 `NKH`、苏州北 `OHH`。
-不知道电报码就先 `rail station preselect 站名` 查。
+车站参数已支持站名直输，一般不用记码；`station preselect` 仍可做模糊搜索。
 
 ## Agent 使用要点（踩坑记录）
 
@@ -149,7 +149,7 @@ rail lucky --pretty
        print(t['number'], t['fromDepart'], '->', t['toArrive'], t['passTime'])"
    ```
 
-6. **位置参数是电报码不是站名**：中文站名只用于 preselect
+6. **车站位置参数接受中文站名或电报码**：`sts`/`station query`/`screen`/`exit` 直接输站名（如 深圳北、广州东站）即可，内部先查内置 3382 站映射，未命中自动走 preselect 实时匹配；`station preselect` 仍用于模糊搜索
 7. **别直接请求 api.railgo.dev**：那是 Apifox 文档站，WAF 把 `/api/*` 302 到帮助页；CLI 内部已走真实 API
 8. **无 key、无显式限速**；V2 约 0.2-0.4s，CLI timeout 30s
 9. **合规**：禁止商业用途、禁止公开接口中转；引用数据需标注来源
@@ -159,7 +159,7 @@ rail lucky --pretty
 ## 验证清单（装完跑一遍确认可用）
 
 ```bash
-rail version                      # rail 0.2.0
+rail version                      # rail 0.3.0
 rail train query G1 --pretty      # 有 timetable 数组
 rail delay G1 --pretty            # 各站 delayStatus
 ```

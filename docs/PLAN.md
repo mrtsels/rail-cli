@@ -713,3 +713,14 @@ Expected: All 12 print OK. (V2 failures on non-running trains are acceptable.)
 - `README.md`：更新章节两种方式（`rail update` / `./install.sh --update`）；新增"每日自动更新（AUTO_UPDATE）"章节；全局参数表加 `--no-update`；环境变量表加 `AUTO_UPDATE` / `XDG_CACHE_HOME`
 - `AGENTS.md`：关键事实增加更新机制一行
 - 本文件（PLAN.md）：追加 Phase 5
+
+---
+
+## Phase 6: 车站名直查（站名 ↔ 电报码兼容，v0.3.0）
+
+**版本**：0.2.0 → 0.3.0。车站位置参数（`train sts` / `station query` / `screen` / `exit`）接受中文站名或三字电报码，电报码完全向后兼容。
+
+- **车站映射**：`rail_cli/stations.json`（3382 站，`{站名: 电报码}`），由 `tools/gen_stations.py` 从 12306 官方车站表（`station_name.js`）生成；电报码与 RailGo API 抽查完全一致。生成脚本可随时重跑刷新
+- **解析逻辑**（`rail_cli/station.py`）：三字母输入视为电报码原样透传；站名精确查映射（兼容「站」后缀）；未命中走 `station/preselect` 实时兜底（精确名优先，多候选报歧义列表，找不到报错 exit 1）
+- **验证**：`python3 -m unittest tests.test_station`（6 例纯函数测试）；7 组真实 API 调用（站名/电报码/混用/带站字/大小写/不存在/歧义）全部通过
+- **文档**：README / AGENTS / SKILL.md（仓库 + ~/.hermes 同步）/ 本文件同步站名直查说明

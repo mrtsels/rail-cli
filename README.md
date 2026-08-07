@@ -11,9 +11,9 @@
 | 子命令 | 接口 | 说明 |
 |---|---|---|
 | `rail train query <车次>` | `/api/train/query` | 按车次号查询列车信息 |
-| `rail train sts <出发> <到达>` | `/api/train/sts_query` | 站到站车次查询（电报码） |
+| `rail train sts <出发> <到达>` | `/api/train/sts_query` | 站到站车次查询（站名或电报码） |
 | `rail train preselect <关键词>` | `/api/train/preselect` | 车次号预选词（模糊搜索） |
-| `rail station query <电报码>` | `/api/station/query` | 按电报码查询车站 |
+| `rail station query <站名或电报码>` | `/api/station/query` | 查询车站信息 |
 | `rail station preselect <关键词>` | `/api/station/preselect` | 车站名预选词（模糊搜索） |
 | `rail lucky` | `/api/lucky` | 随机车次（原为纪念车票设计） |
 
@@ -80,8 +80,11 @@ pip install -e .
 # 车次查询
 rail train query G1 --pretty
 
-# 站到站查询（深圳 → 广州东，使用电报码；可加 --date）
-rail train sts SZQ GGQ --pretty
+# 站到站查询（深圳 → 广州东，站名或电报码均可；可加 --date）
+rail train sts 深圳 广州东 --pretty
+
+# 车站信息查询（站名或电报码均可）
+rail station query 深圳北 --pretty
 
 # 车站模糊搜索
 rail station preselect 新余
@@ -93,11 +96,11 @@ rail main G1 --date 20260807 --pretty
 rail delay G1 --pretty
 
 # 车站大屏（出发/到达）
-rail screen BJP --pretty
-rail screen BJP --kind arrival
+rail screen 北京南 --pretty
+rail screen 北京南 --kind arrival
 
 # 检票口/站台/出站口
-rail exit G1 VNP --pretty
+rail exit G1 北京南 --pretty
 
 # 随机车次
 rail lucky --pretty
@@ -127,7 +130,8 @@ rail train --help
 
 ## 数据说明
 
-- 数据来源：[RailGo 数据服务](https://api.railgo.dev)（官方文档站），实际 API 域名 `data.railgo.zenglingkun.cn`（V1）/ `rg-api.zenglingkun.cn`（V2）
+- 车站参数（`sts` / `station query` / `screen` / `exit`）接受中文站名或三字电报码：内置全路网车站表（3382 站）精确匹配，未收录的新站自动走实时模糊搜索兜底
+- 数据来源：[RailGo 数据服务](https://api.railgo.dev)（官方文档站），实际 API 域名 `data.railgo.zenglingkun.cn`（V1）/ `rg-api.zenglingkun.cn`（V2）；车站表生成脚本 `tools/gen_stations.py`（来源 12306 官方车站数据）
 - API 无需 key、无显式限速
 - **禁止商业用途、禁止公开接口中转**；公开使用数据请标注来源
 - V2 响应约 0.2-0.4s，客户端 timeout 30s
